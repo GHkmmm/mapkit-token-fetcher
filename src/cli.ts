@@ -7,7 +7,7 @@ import { getCredentials } from './input';
 const program = new Command();
 
 program
-  .name('mapkit-token-refresh')
+  .name('mapkit-token-fetcher')
   .description('自动刷新 Apple MapKit Server Token 的命令行工具')
   .version('1.0.0');
 

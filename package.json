@@ -1,10 +1,10 @@
 {
-  "name": "mapkit-token-refresh",
+  "name": "mapkit-token-fetcher",
   "version": "1.0.0",
   "description": "自动刷新 Apple MapKit Server Token 的命令行工具",
   "main": "dist/cli.js",
   "bin": {
-    "mapkit-token-refresh": "./dist/cli.js"
+    "mapkit-token-fetcher": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc",

@@ -117,7 +117,7 @@ npx playwright install-deps chromium
 ## 项目结构
 
 ```
-mapkit-token-refresh-tool/
+mapkit-token-fetcher/
 ├── package.json          # npm 配置
 ├── tsconfig.json         # TypeScript 配置
 ├── README.md             # 项目文档
