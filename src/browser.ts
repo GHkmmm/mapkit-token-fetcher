@@ -1,7 +1,12 @@
 import { chromium, Browser, Page, BrowserContext, Frame, FrameLocator } from 'playwright';
 import { promptVerificationCode } from './input';
+import path from 'path';
+import { existsSync } from 'fs';
 
 const APPLE_DEVELOPER_URL = 'https://developer.apple.com/account/resources/services/maps-tokens';
+
+// 登录状态存储文件路径（项目根目录下）
+export const AUTH_STATE_FILE = path.join(process.cwd(), '.auth-state.json');
 
 /**
  * 打开浏览器并跳转到苹果开发者后台
@@ -52,9 +57,13 @@ export function getTargetUrl(): string {
 export async function getMapKitToken(
   username: string,
   password: string,
-  headless: boolean = false
+  headless: boolean = false,
+  useAuthCache: boolean = true
 ): Promise<string | null> {
   console.log('🚀 正在启动浏览器...');
+  
+  // 检查是否存在登录状态文件
+  const hasAuthState = existsSync(AUTH_STATE_FILE) && useAuthCache;
   
   const browser = await chromium.launch({
     headless,
@@ -63,8 +72,13 @@ export async function getMapKitToken(
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
-    locale: 'zh-CN'
+    locale: 'zh-CN',
+    ...(hasAuthState ? { storageState: AUTH_STATE_FILE } : {})
   });
+
+  if (hasAuthState) {
+    console.log('🔄 已加载缓存的登录状态');
+  }
 
   const page = await context.newPage();
 
@@ -89,6 +103,12 @@ export async function getMapKitToken(
       }
       
       console.log('✅ 登录成功');
+      
+      // 保存登录状态
+      console.log('💾 保存登录状态...');
+      await context.storageState({ path: AUTH_STATE_FILE });
+      console.log('✅ 登录状态已保存');
+      
       await page.waitForTimeout(3000);
     }
 
@@ -124,6 +144,10 @@ export async function getMapKitToken(
       });
     }
 
+    // 保存最新的登录状态
+    console.log('💾 保存登录状态...');
+    await context.storageState({ path: AUTH_STATE_FILE });
+    
     await browser.close();
     return token;
 
@@ -195,6 +219,24 @@ async function performLogin(page: Page, username: string, password: string): Pro
     console.log('📝 输入密码...');
     await passwordFrame.locator('#password_text_field').fill(password);
     await page.waitForTimeout(1000);
+
+    // 勾选"记住我的账户"
+    console.log('☑️  勾选"记住我的账户"...');
+    try {
+      // 点击 label 而不是 checkbox，因为 checkbox 被样式元素遮挡
+      const rememberMeLabel = passwordFrame.locator('#remember-me-label');
+      if (await rememberMeLabel.isVisible({ timeout: 2000 }).catch(() => false)) {
+        const checkbox = passwordFrame.locator('#remember-me');
+        const isChecked = await checkbox.isChecked().catch(() => false);
+        if (!isChecked) {
+          await rememberMeLabel.click({ timeout: 5000 });
+        }
+      }
+    } catch (e) {
+      // 勾选失败不影响登录流程，继续执行
+      console.log('⚠️  未能勾选"记住我的账户"，继续登录...');
+    }
+    await page.waitForTimeout(500);
 
     // 点击登录
     console.log('🔘 点击登录...');
@@ -641,9 +683,13 @@ async function waitForUserExit(): Promise<void> {
 export async function refreshMapKitToken(
   username: string,
   password: string,
-  headless: boolean = false
+  headless: boolean = false,
+  useAuthCache: boolean = true
 ): Promise<string | null> {
   console.log('🚀 正在启动浏览器...');
+  
+  // 检查是否存在登录状态文件
+  const hasAuthState = existsSync(AUTH_STATE_FILE) && useAuthCache;
   
   const browser = await chromium.launch({
     headless,
@@ -652,8 +698,13 @@ export async function refreshMapKitToken(
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 800 },
-    locale: 'zh-CN'
+    locale: 'zh-CN',
+    ...(hasAuthState ? { storageState: AUTH_STATE_FILE } : {})
   });
+
+  if (hasAuthState) {
+    console.log('🔄 已加载缓存的登录状态');
+  }
 
   const page = await context.newPage();
 
@@ -679,6 +730,12 @@ export async function refreshMapKitToken(
       }
       
       console.log('✅ 登录成功');
+      
+      // 保存登录状态
+      console.log('💾 保存登录状态...');
+      await context.storageState({ path: AUTH_STATE_FILE });
+      console.log('✅ 登录状态已保存');
+      
       await page.waitForTimeout(3000);
     }
 
@@ -705,6 +762,10 @@ export async function refreshMapKitToken(
       console.log('');
     }
 
+    // 保存最新的登录状态
+    console.log('💾 保存登录状态...');
+    await context.storageState({ path: AUTH_STATE_FILE });
+    
     await browser.close();
     return token;
 

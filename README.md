@@ -61,20 +61,48 @@ npm run dev -- open
 ```
 Commands:
   open [options]     打开浏览器并跳转到 Apple Developer 后台
-  refresh [options]  登录并刷新 MapKit Token
+  get [options]      登录并获取现有 MapKit Token
+  refresh [options]  登录并创建新的 MapKit Token
 
-refresh 选项:
+get/refresh 选项:
   -u, --username <username>    Apple ID 用户名
   -p, --password <password>    Apple ID 密码
   --headless                   使用无头模式（默认: false）
+  --no-auth-cache              不使用缓存的登录状态（强制重新登录）
 ```
 
 ## 登录流程说明
 
 1. **账号密码登录** - 自动填充账号密码并提交
-2. **两步验证** - 检测到时会在终端提示输入6位验证码
-3. **信任浏览器** - 自动点击"信任"按钮（如出现）
-4. **Token 提取** - 登录成功后自动提取并输出 Token
+2. **记住账户** - 自动勾选"记住我的账户"选项
+3. **两步验证** - 检测到时会在终端提示输入6位验证码
+4. **信任浏览器** - 自动点击"信任"按钮（如出现）
+5. **Token 提取** - 登录成功后自动提取并输出 Token
+
+## 登录状态持久化
+
+工具支持缓存登录状态，首次登录后可跳过两步验证：
+
+### 工作原理
+
+- 首次登录成功后，登录状态会保存到项目根目录下的 `.auth-state.json` 文件
+- 后续运行时自动加载该文件，跳过登录和两步验证流程
+- 登录状态通常在 30 天内有效
+
+### 使用方式
+
+```bash
+# 首次登录（需要两步验证）
+npm run dev -- get
+
+# 后续使用（自动跳过两步验证）
+npm run dev -- get
+
+# 强制重新登录（忽略缓存）
+npm run dev -- get --no-auth-cache
+```
+
+> ⚠️ **安全提示**: `.auth-state.json` 包含敏感的登录凭证，该文件已自动添加到 `.gitignore`，请勿手动上传或分享。
 
 ## Linux 服务器部署
 

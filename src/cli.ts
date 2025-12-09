@@ -36,6 +36,7 @@ program
   .option('-u, --username <username>', 'Apple ID 用户名')
   .option('-p, --password <password>', 'Apple ID 密码')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
+  .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
   .action(async (options) => {
     try {
       printBanner();
@@ -56,7 +57,7 @@ program
       console.log('');
       
       // 执行获取
-      const token = await getMapKitToken(username, password, options.headless);
+      const token = await getMapKitToken(username, password, options.headless, options.authCache);
       
       if (token) {
         // Token 已在 getMapKitToken 中输出
@@ -78,6 +79,7 @@ program
   .option('-u, --username <username>', 'Apple ID 用户名')
   .option('-p, --password <password>', 'Apple ID 密码')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
+  .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
   .action(async (options) => {
     try {
       printBanner();
@@ -98,7 +100,7 @@ program
       console.log('');
       
       // 执行刷新
-      const token = await refreshMapKitToken(username, password, options.headless);
+      const token = await refreshMapKitToken(username, password, options.headless, options.authCache);
       
       if (token) {
         // Token 已在 refreshMapKitToken 中输出

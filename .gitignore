@@ -25,3 +25,6 @@ npm-debug.log*
 # Playwright
 playwright-report/
 test-results/
+
+# Auth state (contains sensitive cookies)
+.auth-state.json
