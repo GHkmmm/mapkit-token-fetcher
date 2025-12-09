@@ -3,6 +3,8 @@
 import { Command } from 'commander';
 import { openAppleDeveloperPortal, getTargetUrl, getMapKitToken, refreshMapKitToken } from './browser';
 import { getCredentials } from './input';
+import { writeFileSync } from 'fs';
+import path from 'path';
 
 const program = new Command();
 
@@ -35,6 +37,7 @@ program
   .description('登录 Apple Developer 后台并获取现有 MapKit Token')
   .option('-u, --username <username>', 'Apple ID 用户名')
   .option('-p, --password <password>', 'Apple ID 密码')
+  .option('-o, --out <path>', '将 Token 输出到指定文件路径')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
   .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
   .action(async (options) => {
@@ -61,6 +64,14 @@ program
       
       if (token) {
         // Token 已在 getMapKitToken 中输出
+        
+        // 如果指定了输出路径，则写入文件
+        if (options.out) {
+          const outputPath = path.resolve(options.out);
+          writeFileSync(outputPath, token, 'utf-8');
+          console.log(`📄 Token 已保存到: ${outputPath}`);
+        }
+        
         process.exit(0);
       } else {
         process.exit(1);
@@ -78,6 +89,7 @@ program
   .description('登录 Apple Developer 后台并创建新的 MapKit Token')
   .option('-u, --username <username>', 'Apple ID 用户名')
   .option('-p, --password <password>', 'Apple ID 密码')
+  .option('-o, --out <path>', '将 Token 输出到指定文件路径')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
   .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
   .action(async (options) => {
@@ -104,6 +116,14 @@ program
       
       if (token) {
         // Token 已在 refreshMapKitToken 中输出
+        
+        // 如果指定了输出路径，则写入文件
+        if (options.out) {
+          const outputPath = path.resolve(options.out);
+          writeFileSync(outputPath, token, 'utf-8');
+          console.log(`📄 Token 已保存到: ${outputPath}`);
+        }
+        
         process.exit(0);
       } else {
         process.exit(1);
