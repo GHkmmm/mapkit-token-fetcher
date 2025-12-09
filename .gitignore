@@ -28,3 +28,6 @@ test-results/
 
 # Auth state (contains sensitive cookies)
 .auth-state.json
+
+# Config file (contains sensitive credentials)
+config.yaml

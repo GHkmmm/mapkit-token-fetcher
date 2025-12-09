@@ -22,7 +22,8 @@
   "license": "MIT",
   "dependencies": {
     "commander": "^12.1.0",
-    "playwright": "^1.49.1"
+    "playwright": "^1.49.1",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.10.1",

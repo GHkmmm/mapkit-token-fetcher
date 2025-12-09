@@ -6,8 +6,7 @@
 
 - 🚀 使用 `npx` 命令快速调用
 - 🖥️ 支持 headed/headless 两种浏览器模式
-- ⌨️ 交互式终端输入账号密码（密码隐藏显示）
-- 🔧 命令行参数支持，可跳过交互
+- 📄 通过配置文件管理账号密码
 - 🔐 自动处理两步验证和信任浏览器
 - 📤 Token 直接输出到 stdout
 
@@ -24,36 +23,58 @@ npx playwright install chromium
 npm run build
 ```
 
+## 配置
+
+在项目根目录创建 `config.yaml` 文件，填写您的 Apple Developer 账户凭证：
+
+```yaml
+# config.yaml
+apple:
+  username: your-apple-id@example.com
+  password: your-password
+```
+
+> ⚠️ **安全提示**: `config.yaml` 包含敏感凭证，该文件已自动添加到 `.gitignore`，请勿手动上传或分享。
+
+您可以参考 `config.yaml.example` 文件作为模板。
+
 ## 使用方法
 
 ### 刷新 MapKit Token
-
-#### 交互式模式（推荐）
 
 ```bash
 npm run dev -- refresh
 ```
 
-程序会提示输入账号和密码，密码输入时完全隐藏：
+程序会自动读取 `config.yaml` 中的凭证并执行操作：
 
 ```
 🍎 MapKit Token Refresh Tool
 ═══════════════════════════════════════
 
-📧 请输入 Apple ID: your@email.com
-🔑 请输入密码（输入时不显示）: 
+📋 功能: 登录并创建新的 MapKit Token
+
+📧 Apple ID: your@email.com
+🔑 密码: ************
 ```
 
-#### 参数模式（适用于脚本/定时任务）
+### 获取现有 Token
 
 ```bash
-npm run dev -- refresh --username "your@email.com" --password "yourpassword"
+npm run dev -- get
 ```
 
 ### 仅打开浏览器
 
 ```bash
 npm run dev -- open
+```
+
+### 将 Token 输出到文件
+
+```bash
+npm run dev -- get -o ./token.txt
+npm run dev -- refresh --out ./new-token.txt
 ```
 
 ### 命令行选项
@@ -65,10 +86,9 @@ Commands:
   refresh [options]  登录并创建新的 MapKit Token
 
 get/refresh 选项:
-  -u, --username <username>    Apple ID 用户名
-  -p, --password <password>    Apple ID 密码
-  --headless                   使用无头模式（默认: false）
-  --no-auth-cache              不使用缓存的登录状态（强制重新登录）
+  -o, --out <path>           将 Token 输出到指定文件路径
+  --headless                 使用无头模式（默认: false）
+  --no-auth-cache            不使用缓存的登录状态（强制重新登录）
 ```
 
 ## 登录流程说明
@@ -111,8 +131,10 @@ npm run dev -- get --no-auth-cache
 npx playwright install-deps chromium
 
 # 定时任务示例（每天凌晨 2 点）
-0 2 * * * cd /path/to/tool && node dist/cli.js refresh -u "email" -p "pass" --headless >> /var/log/mapkit-token.log 2>&1
+0 2 * * * cd /path/to/tool && node dist/cli.js refresh --headless >> /var/log/mapkit-token.log 2>&1
 ```
+
+> 注意：服务器上需要提前配置好 `config.yaml` 文件，且 `--headless` 模式需配合 `.auth-state.json` 使用（首次需在本地完成登录以生成认证缓存）。
 
 ## 项目结构
 
@@ -121,9 +143,12 @@ mapkit-token-fetcher/
 ├── package.json          # npm 配置
 ├── tsconfig.json         # TypeScript 配置
 ├── README.md             # 项目文档
+├── config.yaml           # 凭证配置（需手动创建）
+├── config.yaml.example   # 配置文件模板
 ├── src/
 │   ├── cli.ts            # CLI 入口
 │   ├── browser.ts        # 浏览器自动化
+│   ├── config.ts         # 配置文件读取
 │   ├── input.ts          # 交互式输入
 │   └── types.ts          # 类型定义
 └── dist/                 # 编译输出

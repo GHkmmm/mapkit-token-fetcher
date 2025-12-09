@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { openAppleDeveloperPortal, getTargetUrl, getMapKitToken, refreshMapKitToken } from './browser';
-import { getCredentials } from './input';
+import { loadConfig } from './config';
 import { writeFileSync } from 'fs';
 import path from 'path';
 
@@ -35,8 +35,6 @@ program
 program
   .command('get')
   .description('登录 Apple Developer 后台并获取现有 MapKit Token')
-  .option('-u, --username <username>', 'Apple ID 用户名')
-  .option('-p, --password <password>', 'Apple ID 密码')
   .option('-o, --out <path>', '将 Token 输出到指定文件路径')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
   .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
@@ -46,17 +44,12 @@ program
       console.log('📋 功能: 登录并获取现有 MapKit Token');
       console.log('');
 
-      // 获取凭证（交互式输入或命令行参数）
-      const { username, password } = await getCredentials(
-        options.username,
-        options.password
-      );
+      // 从配置文件读取凭证
+      const config = loadConfig();
+      const { username, password } = config.apple;
 
-      if (!username || !password) {
-        console.error('❌ 用户名和密码不能为空');
-        process.exit(1);
-      }
-
+      console.log(`📧 Apple ID: ${username}`);
+      console.log(`🔑 密码: ${'*'.repeat(password.length)}`);
       console.log('');
       
       // 执行获取
@@ -87,8 +80,6 @@ program
 program
   .command('refresh')
   .description('登录 Apple Developer 后台并创建新的 MapKit Token')
-  .option('-u, --username <username>', 'Apple ID 用户名')
-  .option('-p, --password <password>', 'Apple ID 密码')
   .option('-o, --out <path>', '将 Token 输出到指定文件路径')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
   .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
@@ -98,17 +89,12 @@ program
       console.log('📋 功能: 登录并创建新的 MapKit Token');
       console.log('');
 
-      // 获取凭证（交互式输入或命令行参数）
-      const { username, password } = await getCredentials(
-        options.username,
-        options.password
-      );
+      // 从配置文件读取凭证
+      const config = loadConfig();
+      const { username, password } = config.apple;
 
-      if (!username || !password) {
-        console.error('❌ 用户名和密码不能为空');
-        process.exit(1);
-      }
-
+      console.log(`📧 Apple ID: ${username}`);
+      console.log(`🔑 密码: ${'*'.repeat(password.length)}`);
       console.log('');
       
       // 执行刷新
@@ -145,3 +131,4 @@ function printBanner(): void {
 }
 
 program.parse();
+

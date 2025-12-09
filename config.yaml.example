@@ -1,0 +1,6 @@
+# Apple Developer 账户凭证
+# 复制此文件为 config.yaml 并填写您的凭证
+
+apple:
+  username: your-apple-id@example.com
+  password: your-password
