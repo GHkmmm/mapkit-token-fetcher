@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { openAppleDeveloperPortal, getTargetUrl, refreshMapKitToken } from './browser';
+import { openAppleDeveloperPortal, getTargetUrl, getMapKitToken, refreshMapKitToken } from './browser';
 import { getCredentials } from './input';
 
 const program = new Command();
@@ -29,17 +29,59 @@ program
     }
   });
 
-// refresh 命令 - 登录并刷新 Token
+// get 命令 - 登录并获取现有 Token
 program
-  .command('refresh')
-  .description('登录 Apple Developer 后台并获取 MapKit Token')
+  .command('get')
+  .description('登录 Apple Developer 后台并获取现有 MapKit Token')
   .option('-u, --username <username>', 'Apple ID 用户名')
   .option('-p, --password <password>', 'Apple ID 密码')
   .option('--headless', '使用无头模式（不显示浏览器界面）', false)
   .action(async (options) => {
     try {
       printBanner();
-      console.log('📋 功能: 登录并获取 MapKit Token');
+      console.log('📋 功能: 登录并获取现有 MapKit Token');
+      console.log('');
+
+      // 获取凭证（交互式输入或命令行参数）
+      const { username, password } = await getCredentials(
+        options.username,
+        options.password
+      );
+
+      if (!username || !password) {
+        console.error('❌ 用户名和密码不能为空');
+        process.exit(1);
+      }
+
+      console.log('');
+      
+      // 执行获取
+      const token = await getMapKitToken(username, password, options.headless);
+      
+      if (token) {
+        // Token 已在 getMapKitToken 中输出
+        process.exit(0);
+      } else {
+        process.exit(1);
+      }
+
+    } catch (error) {
+      console.error('❌ 发生错误:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// refresh 命令 - 登录并创建新 Token
+program
+  .command('refresh')
+  .description('登录 Apple Developer 后台并创建新的 MapKit Token')
+  .option('-u, --username <username>', 'Apple ID 用户名')
+  .option('-p, --password <password>', 'Apple ID 密码')
+  .option('--headless', '使用无头模式（不显示浏览器界面）', false)
+  .action(async (options) => {
+    try {
+      printBanner();
+      console.log('📋 功能: 登录并创建新的 MapKit Token');
       console.log('');
 
       // 获取凭证（交互式输入或命令行参数）

@@ -47,9 +47,9 @@ export function getTargetUrl(): string {
 }
 
 /**
- * 登录并刷新 MapKit Token
+ * 登录并获取现有 MapKit Token
  */
-export async function refreshMapKitToken(
+export async function getMapKitToken(
   username: string,
   password: string,
   headless: boolean = false
@@ -504,6 +504,214 @@ async function extractToken(page: Page): Promise<string | null> {
     return null;
   } catch (error) {
     console.error('提取 Token 出错:', error instanceof Error ? error.message : error);
+    return null;
+  }
+}
+
+/**
+ * 生成 Token 描述（格式：auto-refresh-YYYY-MM-DD-HH-mm-ss）
+ */
+function generateTokenDescription(): string {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  return `auto-refresh-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+}
+
+/**
+ * 创建新 Token
+ */
+async function createNewToken(page: Page): Promise<string | null> {
+  try {
+    console.log('🔍 正在查找添加 Token 按钮...');
+    
+    // 点击添加按钮（带有特定颜色的 SVG 图标）
+    const addButton = page.locator('svg[color="#0070c9"]').first();
+    if (!await addButton.isVisible({ timeout: 10000 })) {
+      console.error('❌ 未找到添加 Token 按钮');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+    
+    console.log('🔘 点击添加 Token 按钮...');
+    await addButton.click();
+    await page.waitForTimeout(2000);
+
+    // 等待弹窗出现
+    console.log('⏳ 等待弹窗加载...');
+    
+    // 选择 Token Type: Server API
+    console.log('📝 选择 Token Type: Server API...');
+    const serverAPIRadio = page.locator('input[name="tokenType"][value="serverAPI"]');
+    if (!await serverAPIRadio.isVisible({ timeout: 5000 })) {
+      console.error('❌ 未找到 Token Type 选择框');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+    await serverAPIRadio.click();
+    await page.waitForTimeout(500);
+
+    // 选择 Restriction Type: None
+    console.log('📝 选择 Restriction Type: None...');
+    const noneRestrictionRadio = page.locator('input[name="tokenEnvironment"][value="test"]');
+    if (!await noneRestrictionRadio.isVisible({ timeout: 5000 })) {
+      console.error('❌ 未找到 Restriction Type 选择框');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+    await noneRestrictionRadio.click();
+    await page.waitForTimeout(500);
+
+    // 填写 Token Description
+    const description = generateTokenDescription();
+    console.log(`📝 填写 Token Description: ${description}...`);
+    const descriptionInput = page.locator('input[placeholder*="Description"]');
+    if (!await descriptionInput.isVisible({ timeout: 5000 })) {
+      console.error('❌ 未找到 Description 输入框');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+    await descriptionInput.fill(description);
+    await page.waitForTimeout(500);
+
+    // 点击 Create 按钮
+    console.log('🔘 点击 Create 按钮...');
+    const createButton = page.locator('button:has-text("Create")');
+    if (!await createButton.isVisible({ timeout: 5000 })) {
+      console.error('❌ 未找到 Create 按钮');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+    await createButton.click();
+    
+    // 等待创建完成，页面刷新
+    console.log('⏳ 等待 Token 创建完成...');
+    await page.waitForTimeout(5000);
+    await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
+
+    // 从列表中获取最新的 Token（最后一个 .limit-name 元素）
+    console.log('🔍 正在获取新创建的 Token...');
+    const tokenElements = page.locator('.limit-name');
+    const count = await tokenElements.count();
+    
+    if (count === 0) {
+      console.error('❌ 未找到 Token 列表');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+
+    // 获取最后一个（最新添加的）Token
+    const lastToken = tokenElements.nth(count - 1);
+    const tokenText = await lastToken.textContent();
+    
+    if (!tokenText || tokenText.trim().length === 0) {
+      console.error('❌ Token 值为空');
+      console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+      await waitForUserExit();
+      return null;
+    }
+
+    return tokenText.trim();
+
+  } catch (error) {
+    console.error('❌ 创建 Token 出错:', error instanceof Error ? error.message : error);
+    console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+    await waitForUserExit();
+    return null;
+  }
+}
+
+/**
+ * 等待用户手动退出
+ */
+async function waitForUserExit(): Promise<void> {
+  await new Promise(() => {
+    // 保持程序运行，等待用户 Ctrl+C
+  });
+}
+
+/**
+ * 登录并刷新（创建新）MapKit Token
+ */
+export async function refreshMapKitToken(
+  username: string,
+  password: string,
+  headless: boolean = false
+): Promise<string | null> {
+  console.log('🚀 正在启动浏览器...');
+  
+  const browser = await chromium.launch({
+    headless,
+    args: ['--window-size=1280,800']
+  });
+
+  const context = await browser.newContext({
+    viewport: { width: 1280, height: 800 },
+    locale: 'zh-CN'
+  });
+
+  const page = await context.newPage();
+
+  try {
+    // 跳转到目标页面
+    console.log(`📍 正在跳转到: ${APPLE_DEVELOPER_URL}`);
+    await page.goto(APPLE_DEVELOPER_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
+    await page.waitForTimeout(3000);
+    
+    const currentUrl = page.url();
+    console.log(`📍 当前页面: ${currentUrl}`);
+
+    // 检测是否需要登录
+    if (isLoginPage(currentUrl)) {
+      console.log('🔐 检测到登录页面，正在登录...');
+      
+      const loginSuccess = await performLogin(page, username, password);
+      if (!loginSuccess) {
+        console.error('❌ 登录失败');
+        console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+        await waitForUserExit();
+        return null;
+      }
+      
+      console.log('✅ 登录成功');
+      await page.waitForTimeout(3000);
+    }
+
+    // 确保在 Token 页面
+    const afterLoginUrl = page.url();
+    if (!afterLoginUrl.includes('maps-tokens')) {
+      console.log('📍 正在跳转到 Token 管理页面...');
+      await page.goto(APPLE_DEVELOPER_URL, { waitUntil: 'networkidle', timeout: 60000 });
+    }
+
+    // 等待页面加载
+    console.log('⏳ 等待页面加载...');
+    await page.waitForTimeout(5000);
+
+    // 创建新 Token
+    console.log('🆕 正在创建新 Token...');
+    const token = await createNewToken(page);
+
+    if (token) {
+      console.log('\n═══════════════════════════════════════');
+      console.log('✅ Token 创建成功！');
+      console.log('═══════════════════════════════════════\n');
+      console.log(token);
+      console.log('');
+    }
+
+    await browser.close();
+    return token;
+
+  } catch (error) {
+    console.error('❌ 发生错误:', error instanceof Error ? error.message : error);
+    console.log('💡 请手动操作，完成后按 Ctrl+C 退出');
+    await waitForUserExit();
     return null;
   }
 }
