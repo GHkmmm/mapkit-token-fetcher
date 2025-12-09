@@ -1,0 +1,35 @@
+{
+  "name": "mapkit-token-refresh",
+  "version": "1.0.0",
+  "description": "自动刷新 Apple MapKit Server Token 的命令行工具",
+  "main": "dist/cli.js",
+  "bin": {
+    "mapkit-token-refresh": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "npx ts-node src/cli.ts",
+    "start": "node dist/cli.js"
+  },
+  "keywords": [
+    "mapkit",
+    "apple",
+    "token",
+    "playwright",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^12.1.0",
+    "playwright": "^1.49.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
