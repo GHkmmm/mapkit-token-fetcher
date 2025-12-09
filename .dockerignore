@@ -1,0 +1,20 @@
+# 依赖目录
+node_modules
+
+# 构建输出
+dist
+
+# Git
+.git
+.gitignore
+
+# 敏感文件
+config.yaml
+.auth-state.json
+
+# 开发文件
+*.md
+*.log
+
+# 数据目录
+data

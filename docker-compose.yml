@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  mapkit-token-fetcher:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mapkit-token-fetcher
+    volumes:
+      # 挂载配置文件
+      - ./config.yaml:/app/config.yaml:ro
+      # 挂载认证状态缓存（用于持久化登录状态）
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+    # 使用 tty 以支持交互式验证码输入
+    tty: true
+    stdin_open: true

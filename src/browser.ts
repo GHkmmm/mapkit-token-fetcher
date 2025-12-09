@@ -5,8 +5,10 @@ import { existsSync } from 'fs';
 
 const APPLE_DEVELOPER_URL = 'https://developer.apple.com/account/resources/services/maps-tokens';
 
-// 登录状态存储文件路径（项目根目录下）
-export const AUTH_STATE_FILE = path.join(process.cwd(), '.auth-state.json');
+// 登录状态存储文件路径
+// 支持通过 DATA_DIR 环境变量配置数据目录（用于 Docker 环境）
+const DATA_DIR = process.env.DATA_DIR || process.cwd();
+export const AUTH_STATE_FILE = path.join(DATA_DIR, '.auth-state.json');
 
 /**
  * 打开浏览器并跳转到苹果开发者后台

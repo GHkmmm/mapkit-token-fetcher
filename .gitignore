@@ -31,3 +31,6 @@ test-results/
 
 # Config file (contains sensitive credentials)
 config.yaml
+
+# Docker data directory
+data/
