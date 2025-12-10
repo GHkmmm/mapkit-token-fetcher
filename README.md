@@ -18,7 +18,14 @@
 
 ### 方式一：Docker 部署（推荐）
 
-#### 1. 准备配置文件
+#### 1. 克隆仓库
+
+```bash
+git clone https://github.com/GHkmmm/mapkit-token-fetcher.git
+cd mapkit-token-fetcher
+```
+
+#### 2. 准备配置文件
 
 ```bash
 cp config.yaml.example config.yaml
@@ -35,13 +42,13 @@ apple:
 
 > ⚠️ **安全提示**: `config.yaml` 包含敏感凭证，该文件已自动添加到 `.gitignore`，请勿手动上传或分享。
 
-#### 2. 构建镜像
+#### 3. 构建镜像
 
 ```bash
 docker-compose build
 ```
 
-#### 3. 运行
+#### 4. 运行
 
 > ⚠️ **重要**：如需输入两步验证码，必须使用交互式终端！
 
@@ -71,7 +78,14 @@ docker-compose run --rm mapkit-token-fetcher --help
 
 ### 方式二：本地安装
 
-#### 1. 安装依赖
+#### 1. 克隆仓库
+
+```bash
+git clone https://github.com/GHkmmm/mapkit-token-fetcher.git
+cd mapkit-token-fetcher
+```
+
+#### 2. 安装依赖
 
 ```bash
 # 安装依赖
@@ -84,7 +98,7 @@ npx playwright install chromium
 npm run build
 ```
 
-#### 2. 配置
+#### 3. 配置
 
 ```bash
 cp config.yaml.example config.yaml
@@ -101,7 +115,7 @@ apple:
 
 > ⚠️ **安全提示**: `config.yaml` 包含敏感凭证，该文件已自动添加到 `.gitignore`，请勿手动上传或分享。
 
-#### 3. 使用方法
+#### 4. 使用方法
 
 **刷新（创建新）Token：**
 
