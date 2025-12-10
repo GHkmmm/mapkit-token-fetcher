@@ -129,7 +129,3 @@ get/refresh 选项:
   --headless                 使用无头模式（默认: false）
   --no-auth-cache            不使用缓存的登录状态（强制重新登录）
 ```
-
-## License
-
-MIT
