@@ -13,6 +13,7 @@ RUN npm ci --only=production
 # 复制源码和配置
 COPY tsconfig.json ./
 COPY src ./src
+COPY public ./public
 
 # 安装开发依赖并构建
 RUN npm install && npm run build && npm prune --production
@@ -28,8 +29,12 @@ ENV DATA_DIR=/app/data
 # 默认使用 headless 模式
 ENV HEADLESS=true
 
+# 暴露 HTTP Server 端口
+EXPOSE 3000
+
 # 入口点
 ENTRYPOINT ["node", "dist/cli.js"]
 
 # 默认命令
 CMD ["--help"]
+
