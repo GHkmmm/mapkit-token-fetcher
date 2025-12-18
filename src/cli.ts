@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { openAppleDeveloperPortal, getTargetUrl, getMapKitToken, refreshMapKitToken } from './browser';
-import { loadConfig } from './config';
+import { openAppleDeveloperPortal, getTargetUrl, getMapKitToken, refreshMapKitToken } from './browser.js';
+import { loadConfig } from './config.js';
 import { writeFileSync } from 'fs';
 import path from 'path';
+import { startServer } from './server.js';
 
 const program = new Command();
 
@@ -129,6 +130,33 @@ function printBanner(): void {
   console.log('🍎 MapKit Token Refresh Tool');
   console.log('═══════════════════════════════════════');
 }
+
+// serve 命令 - 启动 HTTP Server
+program
+  .command('serve')
+  .description('启动 HTTP Server 模式，支持远程验证码输入和 Webhook 通知')
+  .option('-p, --port <port>', '服务端口', '3000')
+  .option('-o, --out <path>', '将 Token 输出到指定文件路径')
+  .option('--headless', '使用无头模式（默认: true）', true)
+  .option('--no-headless', '不使用无头模式')
+  .option('--no-auth-cache', '不使用缓存的登录状态（强制重新登录）')
+  .action(async (options) => {
+    try {
+      printBanner();
+      console.log('📋 功能: HTTP Server 模式');
+      console.log('');
+
+      startServer({
+        port: parseInt(options.port, 10),
+        headless: options.headless,
+        authCache: options.authCache,
+        out: options.out
+      });
+    } catch (error) {
+      console.error('❌ 发生错误:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
 
 program.parse();
 

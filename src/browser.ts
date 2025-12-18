@@ -1,7 +1,8 @@
 import { chromium, Browser, Page, BrowserContext, Frame, FrameLocator } from 'playwright';
-import { promptVerificationCode } from './input';
+import { promptVerificationCode } from './input.js';
 import path from 'path';
 import { existsSync } from 'fs';
+import { VerificationCodeProvider } from './types.js';
 
 const APPLE_DEVELOPER_URL = 'https://developer.apple.com/account/resources/services/maps-tokens';
 
@@ -172,7 +173,12 @@ function isLoginPage(url: string): boolean {
 /**
  * 执行登录流程
  */
-async function performLogin(page: Page, username: string, password: string): Promise<boolean> {
+async function performLogin(
+  page: Page,
+  username: string,
+  password: string,
+  verificationCodeProvider?: VerificationCodeProvider
+): Promise<boolean> {
   try {
     console.log('⏳ 等待登录表单加载...');
     await page.waitForLoadState('networkidle', { timeout: 30000 }).catch(() => {});
@@ -256,7 +262,7 @@ async function performLogin(page: Page, username: string, password: string): Pro
     // 检测并处理两步验证
     if (await check2FAPage(page)) {
       console.log('📱 检测到两步验证...');
-      if (!await handle2FA(page)) {
+      if (!await handle2FA(page, verificationCodeProvider)) {
         return false;
       }
     }
@@ -283,7 +289,7 @@ async function performLogin(page: Page, username: string, password: string): Pro
       
       // 再次尝试两步验证和信任浏览器
       if (await check2FAPage(page)) {
-        if (!await handle2FA(page)) return false;
+        if (!await handle2FA(page, verificationCodeProvider)) return false;
         await handleTrustBrowser(page);
         return await waitForTargetPage(page, 15000);
       }
@@ -430,10 +436,27 @@ async function check2FAPage(page: Page): Promise<boolean> {
 
 /**
  * 处理两步验证
+ * @param page Playwright Page 对象
+ * @param verificationCodeProvider 可选的验证码提供者函数（Server 模式使用）
  */
-async function handle2FA(page: Page): Promise<boolean> {
+async function handle2FA(
+  page: Page,
+  verificationCodeProvider?: VerificationCodeProvider
+): Promise<boolean> {
   try {
-    const code = await promptVerificationCode();
+    // 根据模式选择验证码获取方式
+    let code: string | null;
+    if (verificationCodeProvider) {
+      console.log('📱 等待远程验证码输入...');
+      code = await verificationCodeProvider();
+    } else {
+      code = await promptVerificationCode();
+    }
+
+    if (!code) {
+      console.error('❌ 未收到验证码（可能已超时或取消）');
+      return false;
+    }
     
     if (!code || code.length !== 6) {
       console.error('❌ 请输入6位验证码');
@@ -681,12 +704,18 @@ async function waitForUserExit(): Promise<void> {
 
 /**
  * 登录并刷新（创建新）MapKit Token
+ * @param username Apple ID 用户名
+ * @param password Apple ID 密码
+ * @param headless 是否使用无头模式
+ * @param useAuthCache 是否使用登录状态缓存
+ * @param verificationCodeProvider 可选的验证码提供者函数（Server 模式使用）
  */
 export async function refreshMapKitToken(
   username: string,
   password: string,
   headless: boolean = false,
-  useAuthCache: boolean = true
+  useAuthCache: boolean = true,
+  verificationCodeProvider?: VerificationCodeProvider
 ): Promise<string | null> {
   console.log('🚀 正在启动浏览器...');
   
@@ -723,7 +752,7 @@ export async function refreshMapKitToken(
     if (isLoginPage(currentUrl)) {
       console.log('🔐 检测到登录页面，正在登录...');
       
-      const loginSuccess = await performLogin(page, username, password);
+      const loginSuccess = await performLogin(page, username, password, verificationCodeProvider);
       if (!loginSuccess) {
         console.error('❌ 登录失败');
         console.log('💡 请手动操作，完成后按 Ctrl+C 退出');

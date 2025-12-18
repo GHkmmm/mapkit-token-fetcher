@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MapKit Token 验证码输入</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 420px;
+      width: 100%;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo span {
+      font-size: 48px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1a1a2e;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 32px;
+    }
+
+    .status-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .status-label {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .status-value {
+      font-weight: 500;
+      font-size: 13px;
+    }
+
+    .status-pending { color: #6c757d; }
+    .status-running { color: #0d6efd; }
+    .status-waiting_verification { color: #fd7e14; }
+    .status-verifying { color: #0dcaf0; }
+    .status-completed { color: #198754; }
+    .status-failed { color: #dc3545; }
+    .status-cancelled { color: #6c757d; }
+    .status-timeout { color: #dc3545; }
+
+    .code-input-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .code-input {
+      width: 48px;
+      height: 56px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 600;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .code-input:focus {
+      border-color: #0d6efd;
+      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    .code-input:disabled {
+      background: #f5f5f5;
+      color: #999;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px 24px;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 12px;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #dc3545 0%, #bb2d3b 100%);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #5c636a;
+    }
+
+    .message {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .message-success {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+
+    .message-error {
+      background: #f8d7da;
+      color: #842029;
+    }
+
+    .message-warning {
+      background: #fff3cd;
+      color: #664d03;
+    }
+
+    .message-info {
+      background: #cff4fc;
+      color: #055160;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .timer {
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .timer-warning {
+      color: #fd7e14;
+    }
+
+    .timer-danger {
+      color: #dc3545;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      color: #999;
+      font-size: 12px;
+    }
+
+    .result-token {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 16px;
+      word-break: break-all;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 11px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <span>🍎</span>
+    </div>
+    <h1>MapKit Token 刷新</h1>
+    <p class="subtitle">请输入 Apple ID 两步验证码</p>
+
+    <!-- 状态卡片 -->
+    <div class="status-card">
+      <div class="status-row">
+        <span class="status-label">任务 ID</span>
+        <span class="status-value" id="taskId">-</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">状态</span>
+        <span class="status-value" id="taskStatus">加载中...</span>
+      </div>
+    </div>
+
+    <!-- 消息提示 -->
+    <div id="message" class="message hidden"></div>
+
+    <!-- 验证码输入 -->
+    <div id="codeSection">
+      <div class="code-input-container">
+        <input type="text" class="code-input" maxlength="1" data-index="0" inputmode="numeric">
+        <input type="text" class="code-input" maxlength="1" data-index="1" inputmode="numeric">
+        <input type="text" class="code-input" maxlength="1" data-index="2" inputmode="numeric">
+        <input type="text" class="code-input" maxlength="1" data-index="3" inputmode="numeric">
+        <input type="text" class="code-input" maxlength="1" data-index="4" inputmode="numeric">
+        <input type="text" class="code-input" maxlength="1" data-index="5" inputmode="numeric">
+      </div>
+
+      <button id="submitBtn" class="btn btn-primary" disabled>
+        提交验证码
+      </button>
+
+      <button id="cancelBtn" class="btn btn-danger">
+        强制取消任务
+      </button>
+
+      <div id="timer" class="timer"></div>
+    </div>
+
+    <!-- 超时/失败后的操作 -->
+    <div id="retrySection" class="hidden">
+      <button id="retryBtn" class="btn btn-primary">
+        重新发起任务
+      </button>
+    </div>
+
+    <!-- 完成后显示 -->
+    <div id="resultSection" class="hidden">
+      <div id="resultToken" class="result-token"></div>
+    </div>
+
+    <div class="footer">
+      MapKit Token Fetcher
+    </div>
+  </div>
+
+  <script>
+    // 获取 URL 参数
+    const urlParams = new URLSearchParams(window.location.search);
+    const taskId = urlParams.get('taskId');
+
+    // DOM 元素
+    const taskIdEl = document.getElementById('taskId');
+    const taskStatusEl = document.getElementById('taskStatus');
+    const messageEl = document.getElementById('message');
+    const codeSectionEl = document.getElementById('codeSection');
+    const retrySectionEl = document.getElementById('retrySection');
+    const resultSectionEl = document.getElementById('resultSection');
+    const resultTokenEl = document.getElementById('resultToken');
+    const submitBtn = document.getElementById('submitBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const retryBtn = document.getElementById('retryBtn');
+    const timerEl = document.getElementById('timer');
+    const codeInputs = document.querySelectorAll('.code-input');
+
+    let pollInterval = null;
+    let countdownInterval = null;
+
+    // 状态文本映射
+    const statusTextMap = {
+      'pending': '等待开始',
+      'running': '执行中',
+      'waiting_verification': '等待验证码',
+      'verifying': '验证中',
+      'completed': '已完成',
+      'failed': '失败',
+      'cancelled': '已取消',
+      'timeout': '已超时'
+    };
+
+    // 初始化
+    function init() {
+      if (!taskId) {
+        showMessage('error', '缺少任务 ID 参数');
+        disableInputs();
+        return;
+      }
+
+      taskIdEl.textContent = taskId;
+      setupCodeInputs();
+      fetchTaskStatus();
+      pollInterval = setInterval(fetchTaskStatus, 2000);
+    }
+
+    // 设置验证码输入框
+    function setupCodeInputs() {
+      codeInputs.forEach((input, index) => {
+        input.addEventListener('input', (e) => {
+          const value = e.target.value.replace(/\D/g, '');
+          e.target.value = value;
+          
+          if (value && index < 5) {
+            codeInputs[index + 1].focus();
+          }
+          
+          checkCodeComplete();
+        });
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            codeInputs[index - 1].focus();
+          }
+        });
+
+        input.addEventListener('paste', (e) => {
+          e.preventDefault();
+          const paste = (e.clipboardData || window.clipboardData).getData('text');
+          const digits = paste.replace(/\D/g, '').slice(0, 6);
+          
+          digits.split('').forEach((digit, i) => {
+            if (codeInputs[i]) {
+              codeInputs[i].value = digit;
+            }
+          });
+          
+          checkCodeComplete();
+          if (digits.length > 0) {
+            codeInputs[Math.min(digits.length, 5)].focus();
+          }
+        });
+      });
+
+      submitBtn.addEventListener('click', submitCode);
+      cancelBtn.addEventListener('click', cancelTask);
+      retryBtn.addEventListener('click', retryTask);
+    }
+
+    // 检查验证码是否完整
+    function checkCodeComplete() {
+      const code = getCode();
+      submitBtn.disabled = code.length !== 6;
+    }
+
+    // 获取验证码
+    function getCode() {
+      return Array.from(codeInputs).map(input => input.value).join('');
+    }
+
+    // 获取任务状态
+    async function fetchTaskStatus() {
+      try {
+        const response = await fetch(`/api/task/${taskId}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          showMessage('error', data.error || '获取任务状态失败');
+          stopPolling();
+          return;
+        }
+
+        const task = data.task;
+        updateUI(task);
+      } catch (error) {
+        console.error('获取任务状态失败:', error);
+      }
+    }
+
+    // 更新 UI
+    function updateUI(task) {
+      const status = task.status;
+      taskStatusEl.textContent = statusTextMap[status] || status;
+      taskStatusEl.className = `status-value status-${status}`;
+
+      // 根据状态显示不同 UI
+      switch (status) {
+        case 'waiting_verification':
+          showCodeSection();
+          updateTimer(task.expiresAt);
+          break;
+        case 'verifying':
+          showMessage('info', '正在验证...');
+          disableInputs();
+          break;
+        case 'completed':
+          showMessage('success', 'Token 刷新成功！');
+          hideCodeSection();
+          if (task.result?.token) {
+            resultSectionEl.classList.remove('hidden');
+            resultTokenEl.textContent = task.result.token;
+          }
+          stopPolling();
+          break;
+        case 'failed':
+          showMessage('error', task.result?.error || '任务失败');
+          showRetrySection();
+          stopPolling();
+          break;
+        case 'cancelled':
+          showMessage('warning', '任务已取消');
+          showRetrySection();
+          stopPolling();
+          break;
+        case 'timeout':
+          showMessage('warning', '验证码已超时，请重新发起任务');
+          showRetrySection();
+          stopPolling();
+          break;
+        case 'pending':
+        case 'running':
+          showMessage('info', '任务正在准备中，请稍候...');
+          disableInputs();
+          break;
+      }
+    }
+
+    // 更新倒计时
+    function updateTimer(expiresAt) {
+      const update = () => {
+        const now = new Date();
+        const expires = new Date(expiresAt);
+        const remaining = Math.max(0, Math.floor((expires - now) / 1000));
+
+        if (remaining <= 0) {
+          timerEl.textContent = '验证码已过期';
+          timerEl.className = 'timer timer-danger';
+          clearInterval(countdownInterval);
+          return;
+        }
+
+        const minutes = Math.floor(remaining / 60);
+        const seconds = remaining % 60;
+        timerEl.textContent = `剩余时间: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        if (remaining <= 60) {
+          timerEl.className = 'timer timer-danger';
+        } else if (remaining <= 120) {
+          timerEl.className = 'timer timer-warning';
+        } else {
+          timerEl.className = 'timer';
+        }
+      };
+
+      update();
+      if (countdownInterval) clearInterval(countdownInterval);
+      countdownInterval = setInterval(update, 1000);
+    }
+
+    // 提交验证码
+    async function submitCode() {
+      const code = getCode();
+      if (code.length !== 6) return;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading"></span>提交中...';
+
+      try {
+        const response = await fetch(`/api/task/${taskId}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 提交成功，立即结束 loading 状态
+          submitBtn.textContent = '已提交';
+          submitBtn.disabled = true;  // 保持禁用，防止重复点击
+          showMessage('success', '✅ 验证码提交成功，请等待企业微信通知任务结果');
+          // 禁用所有输入，但停止轮询（用户无需继续等待页面）
+          disableInputs();
+          stopPolling();
+          // 隐藏倒计时
+          timerEl.textContent = '';
+        } else {
+          showMessage('error', data.error || '提交失败');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '提交验证码';
+          // 清空输入框
+          codeInputs.forEach(input => input.value = '');
+          codeInputs[0].focus();
+        }
+      } catch (error) {
+        showMessage('error', '网络错误，请重试');
+        submitBtn.disabled = false;
+        submitBtn.textContent = '提交验证码';
+      }
+    }
+
+    // 取消任务
+    async function cancelTask() {
+      if (!confirm('确定要取消任务吗？')) return;
+
+      cancelBtn.disabled = true;
+      cancelBtn.innerHTML = '<span class="loading"></span>取消中...';
+
+      try {
+        const response = await fetch(`/api/task/${taskId}/cancel`, {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showMessage('warning', '任务已取消');
+          showRetrySection();
+        } else {
+          showMessage('error', data.error || '取消失败');
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = '强制取消任务';
+        }
+      } catch (error) {
+        showMessage('error', '网络错误，请重试');
+        cancelBtn.disabled = false;
+        cancelBtn.textContent = '强制取消任务';
+      }
+    }
+
+    // 重试任务
+    async function retryTask() {
+      retryBtn.disabled = true;
+      retryBtn.innerHTML = '<span class="loading"></span>发起中...';
+
+      try {
+        const response = await fetch(`/api/task/${taskId}/retry`, {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // 跳转到新任务页面
+          window.location.href = `/refresh?taskId=${data.taskId}`;
+        } else {
+          showMessage('error', data.error || '重试失败');
+          retryBtn.disabled = false;
+          retryBtn.textContent = '重新发起任务';
+        }
+      } catch (error) {
+        showMessage('error', '网络错误，请重试');
+        retryBtn.disabled = false;
+        retryBtn.textContent = '重新发起任务';
+      }
+    }
+
+    // 显示消息
+    function showMessage(type, text) {
+      messageEl.textContent = text;
+      messageEl.className = `message message-${type}`;
+      messageEl.classList.remove('hidden');
+    }
+
+    // 显示验证码输入区域
+    function showCodeSection() {
+      codeSectionEl.classList.remove('hidden');
+      retrySectionEl.classList.add('hidden');
+      resultSectionEl.classList.add('hidden');
+      enableInputs();
+    }
+
+    // 隐藏验证码输入区域
+    function hideCodeSection() {
+      codeSectionEl.classList.add('hidden');
+    }
+
+    // 显示重试区域
+    function showRetrySection() {
+      codeSectionEl.classList.add('hidden');
+      retrySectionEl.classList.remove('hidden');
+    }
+
+    // 禁用输入
+    function disableInputs() {
+      codeInputs.forEach(input => input.disabled = true);
+      submitBtn.disabled = true;
+      cancelBtn.disabled = true;
+    }
+
+    // 启用输入
+    function enableInputs() {
+      codeInputs.forEach(input => input.disabled = false);
+      cancelBtn.disabled = false;
+      checkCodeComplete();
+    }
+
+    // 停止轮询
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    // 启动
+    init();
+  </script>
+</body>
+</html>
