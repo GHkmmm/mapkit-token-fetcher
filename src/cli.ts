@@ -135,7 +135,7 @@ function printBanner(): void {
 program
   .command('serve')
   .description('启动 HTTP Server 模式，支持远程验证码输入和 Webhook 通知')
-  .option('-p, --port <port>', '服务端口', '3000')
+  .option('-p, --port <port>', '服务端口', '3010')
   .option('-o, --out <path>', '将 Token 输出到指定文件路径')
   .option('--headless', '使用无头模式（默认: true）', true)
   .option('--no-headless', '不使用无头模式')

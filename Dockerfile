@@ -30,7 +30,7 @@ ENV DATA_DIR=/app/data
 ENV HEADLESS=true
 
 # 暴露 HTTP Server 端口
-EXPOSE 3000
+EXPOSE 3010
 
 # 入口点
 ENTRYPOINT ["node", "dist/cli.js"]

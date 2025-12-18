@@ -40,7 +40,7 @@ export function startServer(options: {
   
   appleConfig = config.apple;
   serverConfig = {
-    port: options.port || config.server?.port || 3000,
+    port: options.port || config.server?.port || 3010,
     base_url: config.server?.base_url
   };
   headless = options.headless ?? true;

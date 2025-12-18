@@ -155,7 +155,7 @@ notification:
 
 # Server 配置
 server:
-  port: 3000
+  port: 3010
   # base_url 用于生成验证码页面链接（发送到企业微信的链接）
   # 如果不填写，则使用内置页面 http://localhost:port
   base_url: https://your-domain.com/tools/mapkit-token-fetcher
@@ -168,13 +168,13 @@ server:
 npm run dev -- serve
 
 # Docker
-docker-compose run -d -p 3000:3000 mapkit-token-fetcher serve --headless -o /app/data/token.txt
+docker-compose run -d -p 3010:3010 mapkit-token-fetcher serve --headless -o /app/data/token.txt
 ```
 
 ### 触发刷新任务
 
 ```bash
-curl -X POST http://localhost:3000/api/refresh
+curl -X POST http://localhost:3010/api/refresh
 ```
 
 返回：

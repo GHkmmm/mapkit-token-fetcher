@@ -84,7 +84,7 @@ export function loadFullConfig(): FullConfig {
     console.error('    webhook_url: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx');
     console.error('');
     console.error('server:');
-    console.error('  port: 3000');
+    console.error('  port: 3010');
     console.error('  base_url: https://your-domain.com/path');
     console.error('');
     throw new Error(`配置文件不存在: ${configPath}`);

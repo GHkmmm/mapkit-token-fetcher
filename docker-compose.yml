@@ -11,7 +11,7 @@ services:
       - ./data:/app/data
     ports:
       # HTTP Server 端口映射
-      - "3000:3000"
+      - "3010:3010"
     environment:
       - NODE_ENV=production
     # 使用 tty 以支持交互式验证码输入
