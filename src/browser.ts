@@ -142,8 +142,8 @@ export async function getMapKitToken(
     console.log("⏳ 等待页面加载...");
     await page.waitForTimeout(5000);
 
-    console.log("🔍 正在查找 Token...");
-    const token = await extractToken(page);
+    console.log("🔍 正在获取最新 Token...");
+    const token = await getLatestTokenFromList(page);
 
     if (token) {
       console.log("\n═══════════════════════════════════════");
@@ -748,61 +748,47 @@ async function cleanupExpiredTokens(page: Page): Promise<void> {
 }
 
 /**
- * 提取 MapKit Token
+ * 从 Token 列表中获取最新的 Token
+ * 1. 先点击 CREATION 表头，按创建时间升序排序
+ * 2. 然后获取最后一行的 Token（最新的）
  */
-async function extractToken(page: Page): Promise<string | null> {
+async function getLatestTokenFromList(page: Page): Promise<string | null> {
   try {
-    await page
-      .waitForLoadState("networkidle", { timeout: 30000 })
-      .catch(() => {});
-
-    const tokenSelectors = [
-      "textarea[readonly]",
-      "pre code",
-      "code",
-      ".token-value",
-      'input[readonly][value*="eyJ"]',
-    ];
-
-    for (const selector of tokenSelectors) {
-      try {
-        const element = page.locator(selector).first();
-        if (await element.isVisible({ timeout: 2000 }).catch(() => false)) {
-          const tagName = await element.evaluate((el) =>
-            el.tagName.toLowerCase()
-          );
-          let tokenText =
-            tagName === "input" || tagName === "textarea"
-              ? await element.inputValue()
-              : (await element.textContent()) || "";
-
-          tokenText = tokenText.trim();
-
-          if (
-            tokenText &&
-            (tokenText.startsWith("eyJ") || tokenText.length > 100)
-          ) {
-            return tokenText;
-          }
-        }
-      } catch {
-        continue;
-      }
+    // 点击 CREATION 表头，按创建时间升序排序（最新的在最后一行）
+    console.log("🔄 按创建时间排序 Token 列表...");
+    const creationHeader = page.locator('span.sortable[data-id="creation"]');
+    if (await creationHeader.isVisible({ timeout: 5000 })) {
+      await creationHeader.click();
+      await page.waitForTimeout(1500);
+      console.log("✅ 已按创建时间排序");
+    } else {
+      console.log("⚠️ 未找到 CREATION 表头，继续使用默认排序");
     }
 
-    // 尝试从页面内容中提取 JWT Token
-    const pageContent = await page.content();
-    const jwtMatch = pageContent.match(
-      /eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/
-    );
-    if (jwtMatch) {
-      return jwtMatch[0];
+    // 获取 Token 列表
+    const tokenElements = page.locator(".limit-name");
+    const count = await tokenElements.count();
+
+    if (count === 0) {
+      console.log("⚠️ 未找到 Token 列表");
+      return null;
     }
 
-    return null;
+    console.log(`📋 找到 ${count} 个 Token，获取最新的...`);
+
+    // 获取最后一个（最新添加的）Token
+    const lastToken = tokenElements.nth(count - 1);
+    const tokenText = await lastToken.textContent();
+
+    if (!tokenText || tokenText.trim().length === 0) {
+      console.log("⚠️ Token 值为空");
+      return null;
+    }
+
+    return tokenText.trim();
   } catch (error) {
     console.error(
-      "提取 Token 出错:",
+      "❌ 获取 Token 列表出错:",
       error instanceof Error ? error.message : error
     );
     return null;
@@ -902,30 +888,18 @@ async function createNewToken(page: Page): Promise<string | null> {
       .waitForLoadState("networkidle", { timeout: 30000 })
       .catch(() => {});
 
-    // 从列表中获取最新的 Token（最后一个 .limit-name 元素）
+    // 从列表中获取最新的 Token
     console.log("🔍 正在获取新创建的 Token...");
-    const tokenElements = page.locator(".limit-name");
-    const count = await tokenElements.count();
+    const token = await getLatestTokenFromList(page);
 
-    if (count === 0) {
-      console.error("❌ 未找到 Token 列表");
+    if (!token) {
+      console.error("❌ 未能获取新创建的 Token");
       console.log("💡 请手动操作，完成后按 Ctrl+C 退出");
       await waitForUserExit();
       return null;
     }
 
-    // 获取最后一个（最新添加的）Token
-    const lastToken = tokenElements.nth(count - 1);
-    const tokenText = await lastToken.textContent();
-
-    if (!tokenText || tokenText.trim().length === 0) {
-      console.error("❌ Token 值为空");
-      console.log("💡 请手动操作，完成后按 Ctrl+C 退出");
-      await waitForUserExit();
-      return null;
-    }
-
-    return tokenText.trim();
+    return token;
   } catch (error) {
     console.error(
       "❌ 创建 Token 出错:",
