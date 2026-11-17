@@ -60,7 +60,7 @@ export function createRefreshApp(config: FullConfig, options: ServerOptions = {}
       store.complete(task.id, 'completed', result);
     } catch (error) {
       const failure = asOperationError(signal.aborted ? signal.reason : error);
-      store.complete(task.id, failure.code.endsWith('_TIMEOUT') ? 'timeout' : 'failed', { error: failure.message, errorCode: failure.code });
+      store.complete(task.id, ['TASK_TIMEOUT', 'VERIFICATION_TIMEOUT'].includes(failure.code) ? 'timeout' : 'failed', { error: failure.message, errorCode: failure.code });
     }
   }
 

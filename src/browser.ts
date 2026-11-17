@@ -24,8 +24,20 @@ async function clickOrEnter(button: Locator, input: Locator): Promise<void> {
 
 /** One deadline shared by all frames, including frames attached after the first scan. */
 export async function findLoginFrame(page: Page, selector = '#account_name_text_field', timeout = ACTION_TIMEOUT_MS): Promise<Frame> {
+  return (await waitForLoginStep(page, selector, timeout, false))!;
+}
+
+/** 登录控件等待期间允许缓存会话自动跳回已就绪的令牌列表。 */
+async function waitForLoginStep(page: Page, selector: string, timeout = ACTION_TIMEOUT_MS, allowPortal = true): Promise<Frame | null> {
   const deadline = Date.now() + timeout;
   do {
+    await assertNoAccessBlock(page);
+    if (allowPortal && page.url().startsWith(APPLE_DEVELOPER_URL)) {
+      try { await waitForTokenList(page, 1); return null; }
+      catch (error) {
+        if (!(error instanceof OperationError) || error.code !== 'TOKEN_LIST_UNRECOGNIZED') throw error;
+      }
+    }
     for (const frame of page.frames()) {
       if (await frame.locator(selector).first().isVisible().catch(() => false)) return frame;
     }
@@ -70,11 +82,15 @@ async function verify(page: Page, frame: Frame, signal: AbortSignal, provider?: 
 }
 
 export async function performLogin(page: Page, username: string, password: string, signal: AbortSignal, provider?: VerificationCodeProvider): Promise<void> {
-  const accountFrame = await findLoginFrame(page);
+  const accountFrame = await waitForLoginStep(page, '#account_name_text_field');
+  signal.throwIfAborted();
+  if (!accountFrame) return;
   const account = accountFrame.locator('#account_name_text_field');
   await account.fill(username);
   await clickOrEnter(accountFrame.locator('#sign-in'), account);
-  const passwordFrame = await findLoginFrame(page, '#password_text_field');
+  const passwordFrame = await waitForLoginStep(page, '#password_text_field');
+  signal.throwIfAborted();
+  if (!passwordFrame) return;
   const passwordInput = passwordFrame.locator('#password_text_field');
   await passwordInput.fill(password);
   const remember = passwordFrame.locator('#remember-me-label');

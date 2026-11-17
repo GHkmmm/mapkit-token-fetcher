@@ -63,7 +63,7 @@ test('full refresh cleans expired records then returns the exact newly created t
     launch: await offlineLaunch(await portal('2020-01-02'), () => { closed++; }),
   });
   assert.equal(result.token, 'the-exact-new-token');
-  assert.equal(result.cleanup.revoked, 1);
+  assert.equal(result.cleanup.revoked, 1, JSON.stringify(result.cleanup) + result.warnings.join(';'));
   assert.deepEqual(result.warnings, []);
   assert.equal(closed, 1);
   assert.ok(existsSync(path.join(root, '.auth-state.json')));

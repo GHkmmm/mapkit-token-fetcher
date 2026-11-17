@@ -243,7 +243,8 @@ export async function cleanupExpiredTokens(page: Page, options: { budgetMs?: num
           if (!fresh) throw new OperationError('TOKEN_ROW_CHANGED', '待撤销记录已变化');
           const locator = rowLocator(page, fresh);
           if (await locator.count() !== 1) throw new OperationError('TOKEN_ROW_UNIDENTIFIABLE', '待撤销记录不唯一，已保留');
-          await locator.hover({ timeout: remaining() });
+          // 悬停具体单元格，避免表格行中心落在边框间隙而无法命中。
+          await locator.locator('td, [role="cell"], [role="gridcell"]').first().hover({ timeout: remaining() });
           const revoke = locator.locator('.action-remove').or(locator.getByRole('button', { name: /^(Revoke|撤销|吊销)$/i })).first();
           await revoke.click({ timeout: remaining() });
           const dialog = page.locator('[role="dialog"], .modal').filter({ has: page.getByRole('button', { name: /^(Revoke|撤销|吊销)$/i }) }).first();

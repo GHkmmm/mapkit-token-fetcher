@@ -10,6 +10,17 @@ import type { BrowserResult } from '../src/types.js';
 const result: BrowserResult = { token: 'fresh', warnings: ['无法识别部分到期日期'], cleanup: { scanned: 3, expired: 1, revoked: 1, failed: 0, skipped: 1, complete: false } };
 const config = { apple: { username: 'test', password: 'test' } };
 const noop = { async sendVerificationRequired() {}, async sendTaskCompleted() {} };
+
+test('登录元素超时属于失败，保留错误码供调用方判断', async () => {
+  const service = await fixture({ refresh: async () => { throw new OperationError('ELEMENT_TIMEOUT', '等待登录输入框超时'); } });
+  try {
+    const response = await service.post('/api/refresh');
+    await until(() => !service.store.getActiveTask());
+    const task = service.store.getTask(response.body.taskId)!;
+    assert.equal(task.status, 'failed');
+    assert.equal(task.result?.errorCode, 'ELEMENT_TIMEOUT');
+  } finally { await service.close(); }
+});
 const tick = () => new Promise(resolve => setImmediate(resolve));
 async function until(check: () => boolean) {
   const deadline = Date.now() + 2_000;
